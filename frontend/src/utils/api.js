@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-axios.defaults.baseURL = 'http://localhost:8000/api';
+axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 export const transactionsAPI = {
   getAll: (params) => axios.get('/transactions', { params }),
