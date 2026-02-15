@@ -115,8 +115,7 @@ cd frontend
 npm start
 ```
 
-App runs at: **http://localhost:3000**  
-API runs at: **http://localhost:5000**
+App runs at: **https://expensetrackerbysnehith.netlify.app/**  
 
 ---
 
