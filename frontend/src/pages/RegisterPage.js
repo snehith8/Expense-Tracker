@@ -80,7 +80,7 @@ const RegisterPage = () => {
           <div style={styles.logo}>💰</div>
           <h1 style={styles.title}>Create account</h1>
           <p style={styles.subtitle}>
-            Start tracking your expenses with BellCorp
+            Start tracking your Expenses
           </p>
         </div>
 
@@ -93,7 +93,7 @@ const RegisterPage = () => {
               type="text"
               name="name"
               className="form-control"
-              placeholder="John Doe"
+              placeholder="Snehith A"
               value={form.name}
               onChange={handleChange}
               required
@@ -106,7 +106,7 @@ const RegisterPage = () => {
               type="email"
               name="email"
               className="form-control"
-              placeholder="you@example.com"
+              placeholder="abc@gmail.com"
               value={form.email}
               onChange={handleChange}
               required

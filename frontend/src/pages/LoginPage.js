@@ -83,7 +83,7 @@ const LoginPage = () => {
               type="email"
               name="email"
               className="form-control"
-              placeholder="you@example.com"
+              placeholder="abc@gmail.com"
               value={form.email}
               onChange={handleChange}
               required
