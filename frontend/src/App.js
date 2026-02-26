@@ -54,15 +54,6 @@ const Layout = ({ children }) => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span style={{ fontSize: '1.4rem' }}>💰</span>
               <div>
-                <div
-                  style={{
-                    color: 'white',
-                    fontWeight: '800',
-                    fontSize: '0.95rem',
-                  }}
-                >
-                  BellCorp
-                </div>
                 <div style={{ color: '#64748b', fontSize: '0.7rem' }}>
                   Expense Tracker
                 </div>

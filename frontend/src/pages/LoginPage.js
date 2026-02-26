@@ -71,7 +71,7 @@ const LoginPage = () => {
         <div style={styles.header}>
           <div style={styles.logo}>💰</div>
           <h1 style={styles.title}>Welcome back</h1>
-          <p style={styles.subtitle}>Sign in to your BellCorp account</p>
+          <p style={styles.subtitle}>Sign in to your Expense Tracker Account</p>
         </div>
 
         {error && <div className="alert alert-error">⚠️ {error}</div>}
