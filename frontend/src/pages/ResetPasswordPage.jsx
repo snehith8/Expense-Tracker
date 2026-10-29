@@ -1,12 +1,9 @@
 import { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { authAPI } from '../utils/api';
-import { useAuth } from '../context/AuthContext';
 
 const ResetPasswordPage = () => {
   const { token } = useParams();
-  const navigate = useNavigate();
-  const { login: manualLogin } = useAuth();
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
