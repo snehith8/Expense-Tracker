@@ -28,6 +28,7 @@ const userSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
+// Hash password before saving
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   const salt = await bcrypt.genSalt(10);
@@ -35,8 +36,20 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
+// Compare password
 userSchema.methods.matchPassword = function (enteredPassword) {
   return bcrypt.compare(enteredPassword, this.password);
 };
+
+// CASCADE DELETE HOOK
+// Automatically delete all transactions owned by this user upon account deletion
+userSchema.pre('findOneAndDelete', async function (next) {
+  const Transaction = mongoose.model('Transaction');
+  const user = await this.model.findOne(this.getFilter());
+  if (user) {
+    await Transaction.deleteMany({ user: user._id });
+  }
+  next();
+});
 
 module.exports = mongoose.model('User', userSchema);

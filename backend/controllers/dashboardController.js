@@ -6,6 +6,9 @@ const getDashboard = async (req, res) => {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
+    // Date 5 months prior to get a guaranteed 6-month window (including current month)
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+
     const [
       totalSummary,
       monthlySummary,
@@ -13,6 +16,7 @@ const getDashboard = async (req, res) => {
       recentTransactions,
       monthlyTrend,
     ] = await Promise.all([
+      // 1. Overall Income vs Expense Totals
       Transaction.aggregate([
         { $match: { user: userId } },
         {
@@ -24,11 +28,13 @@ const getDashboard = async (req, res) => {
         },
       ]),
 
+      // 2. Current Month Income vs Expense
       Transaction.aggregate([
         { $match: { user: userId, date: { $gte: startOfMonth } } },
         { $group: { _id: '$type', total: { $sum: '$amount' } } },
       ]),
 
+      // 3. Category Breakdown (Expenses Only)
       Transaction.aggregate([
         { $match: { user: userId, type: 'expense' } },
         {
@@ -42,13 +48,15 @@ const getDashboard = async (req, res) => {
         { $limit: 10 },
       ]),
 
+      // 4. Latest 5 Transactions
       Transaction.find({ user: userId }).sort({ date: -1 }).limit(5).lean(),
 
+      // 5. Monthly Trend Aggregate
       Transaction.aggregate([
         {
           $match: {
             user: userId,
-            date: { $gte: new Date(now.getFullYear(), now.getMonth() - 5, 1) },
+            date: { $gte: sixMonthsAgo },
           },
         },
         {
@@ -65,23 +73,47 @@ const getDashboard = async (req, res) => {
       ]),
     ]);
 
+    // Format Overall Totals
     const totals = { income: 0, expense: 0 };
-    totalSummary.forEach(({ _id, total }) => (totals[_id] = total));
+    totalSummary.forEach(({ _id, total }) => {
+      if (_id) totals[_id] = total;
+    });
 
+    // Format Current Month Totals
     const currentMonth = { income: 0, expense: 0 };
-    monthlySummary.forEach(({ _id, total }) => (currentMonth[_id] = total));
+    monthlySummary.forEach(({ _id, total }) => {
+      if (_id) currentMonth[_id] = total;
+    });
+
+    // Generate unbroken 6-month continuous sequence
+    const monthsOrder = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      monthsOrder.push(key);
+    }
 
     const trendMap = {};
+    monthsOrder.forEach((key) => {
+      trendMap[key] = { month: key, income: 0, expense: 0 };
+    });
+
     monthlyTrend.forEach(({ _id, total }) => {
       const key = `${_id.year}-${String(_id.month).padStart(2, '0')}`;
-      if (!trendMap[key]) trendMap[key] = { month: key, income: 0, expense: 0 };
-      trendMap[key][_id.type] = total;
+      if (trendMap[key] && _id.type) {
+        trendMap[key][_id.type] = total;
+      }
     });
+
+    const continuousMonthlyTrend = monthsOrder.map((key) => trendMap[key]);
 
     res.json({
       success: true,
       data: {
-        totals: { ...totals, balance: totals.income - totals.expense },
+        totals: {
+          ...totals,
+          balance: totals.income - totals.expense,
+        },
         currentMonth: {
           ...currentMonth,
           balance: currentMonth.income - currentMonth.expense,
@@ -92,13 +124,11 @@ const getDashboard = async (req, res) => {
           count,
           percentage:
             totals.expense > 0
-              ? ((total / totals.expense) * 100).toFixed(1)
+              ? parseFloat(((total / totals.expense) * 100).toFixed(1))
               : 0,
         })),
         recentTransactions,
-        monthlyTrend: Object.values(trendMap).sort((a, b) =>
-          a.month.localeCompare(b.month),
-        ),
+        monthlyTrend: continuousMonthlyTrend,
       },
     });
   } catch (error) {

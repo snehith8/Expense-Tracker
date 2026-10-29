@@ -1,19 +1,69 @@
 import axios from 'axios';
 
-axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+// 1. Create dedicated Axios client instance
+const API = axios.create({
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000/api',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: 10000,
+});
+
+// 2. Request Interceptor: Attach Auth Token automatically
+API.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
+
+// 3. Response Interceptor: Global 401 Session Expiry Catch
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      if (
+        window.location.pathname !== '/login' &&
+        window.location.pathname !== '/register'
+      ) {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  },
+);
+
+// 4. API Endpoints
+export const authAPI = {
+  login: (credentials) => API.post('/auth/login', credentials),
+  register: (data) => API.post('/auth/register', data),
+  getProfile: () => API.get('/auth/me'),
+  verifyEmail: (email) => API.post('/auth/verify-email', { email }),
+  directResetPassword: (email, password) =>
+    API.post('/auth/direct-reset-password', { email, password }),
+  updateProfile: (data) => API.put('/auth/update-profile', data),
+  deleteAccount: () => API.delete('/auth/delete-account'),
+};
 
 export const transactionsAPI = {
-  getAll: (params) => axios.get('/transactions', { params }),
-  getById: (id) => axios.get(`/transactions/${id}`),
-  create: (data) => axios.post('/transactions', data),
-  update: (id, data) => axios.put(`/transactions/${id}`, data),
-  delete: (id) => axios.delete(`/transactions/${id}`),
+  getAll: (params) => API.get('/transactions', { params }),
+  getById: (id) => API.get(`/transactions/${id}`),
+  create: (data) => API.post('/transactions', data),
+  update: (id, data) => API.put(`/transactions/${id}`, data),
+  delete: (id) => API.delete(`/transactions/${id}`),
 };
 
 export const dashboardAPI = {
-  getSummary: () => axios.get('/dashboard'),
+  getSummary: () => API.get('/dashboard'),
 };
 
+// 5. Category Definitions
 export const CATEGORIES = [
   'Food & Dining',
   'Transportation',
@@ -30,37 +80,53 @@ export const CATEGORIES = [
   'Other',
 ];
 
+// 6. High-Contrast Modern Category Colors (Optimized for Dark & Light Glass Themes)
 export const CATEGORY_COLORS = {
-  'Food & Dining': '#FF6B6B',
-  Transportation: '#4ECDC4',
-  Shopping: '#45B7D1',
-  Entertainment: '#96CEB4',
-  Healthcare: '#FFEAA7',
-  Utilities: '#DDA0DD',
-  Housing: '#98D8C8',
-  Education: '#F7DC6F',
-  Travel: '#BB8FCE',
-  'Personal Care': '#F0B27A',
-  Investment: '#82E0AA',
-  Income: '#52BE80',
-  Other: '#AEB6BF',
+  'Food & Dining': '#f43f5e', // Rose
+  Transportation: '#06b6d4', // Cyan
+  Shopping: '#3b82f6', // Sky Blue
+  Entertainment: '#8b5cf6', // Violet
+  Healthcare: '#ec4899', // Pink
+  Utilities: '#eab308', // Amber
+  Housing: '#14b8a6', // Teal
+  Education: '#f97316', // Orange
+  Travel: '#a855f7', // Purple
+  'Personal Care': '#d946ef', // Fuchsia
+  Investment: '#10b981', // Emerald Green
+  Income: '#22c55e', // Bright Green
+  Other: '#64748b', // Slate Grey
 };
 
+// 7. Formatters
 export const formatCurrency = (amount) =>
   new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
     minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount || 0);
 
-export const formatDate = (date) =>
-  date
-    ? new Date(date).toLocaleDateString('en-IN', {
+export const formatDate = (date) => {
+  if (!date) return '';
+  const parsed = new Date(date);
+  return isNaN(parsed.getTime())
+    ? ''
+    : parsed.toLocaleDateString('en-IN', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
-      })
-    : '';
+      });
+};
 
-export const formatDateInput = (date) =>
-  date ? new Date(date).toISOString().split('T')[0] : '';
+// Formats local calendar date safely without UTC timezone day-shift
+export const formatDateInput = (date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export default API;

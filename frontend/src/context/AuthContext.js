@@ -1,87 +1,126 @@
-import React, {
+import {
   createContext,
   useContext,
   useState,
   useEffect,
   useCallback,
 } from 'react';
-import axios from 'axios';
+import { authAPI } from '../utils/api';
 
 const AuthContext = createContext(null);
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  // 1. Initialize user and token from storage to avoid loading flicker
+  const [token, setToken] = useState(
+    () => localStorage.getItem('token') || null,
+  );
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('user');
+    try {
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch {
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState(() => localStorage.getItem('token'));
 
-  useEffect(() => {
-    if (token)
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    else delete axios.defaults.headers.common['Authorization'];
-  }, [token]);
-
-  const saveToken = (t) => {
-    localStorage.setItem('token', t);
-    axios.defaults.headers.common['Authorization'] = `Bearer ${t}`;
-    setToken(t);
-  };
-
-  const clearToken = () => {
+  // 2. Clear authentication session
+  const logout = useCallback(() => {
     localStorage.removeItem('token');
-    delete axios.defaults.headers.common['Authorization'];
+    localStorage.removeItem('user');
     setToken(null);
     setUser(null);
+  }, []);
+
+  // 3. Save session helper
+  const handleAuthSuccess = (newToken, newUser) => {
+    localStorage.setItem('token', newToken);
+    if (newUser) {
+      localStorage.setItem('user', JSON.stringify(newUser));
+    }
+    setToken(newToken);
+    setUser(newUser);
   };
 
+  // 4. Validate and load current user profile
   const loadUser = useCallback(async () => {
-    if (!token) return setLoading(false);
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      const res = await axios.get(`${API_URL}/auth/me`);
-      setUser(res.data.user);
-    } catch {
-      clearToken();
+      const res = await authAPI.getProfile();
+      const currentUser = res.data.user || res.data.data;
+      setUser(currentUser);
+      localStorage.setItem('user', JSON.stringify(currentUser));
+    } catch (err) {
+      console.error(
+        'Session validation failed:',
+        err?.response?.data || err.message,
+      );
+      logout();
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, logout]);
 
   useEffect(() => {
     loadUser();
   }, [loadUser]);
 
+  // 5. Register handler
   const register = async (name, email, password) => {
-    const { data } = await axios.post(`${API_URL}/auth/register`, {
-      name,
-      email,
-      password,
-    });
-    saveToken(data.token);
-    setUser(data.user);
-    return data.user;
+    const res = await authAPI.register({ name, email, password });
+    const { token: receivedToken, user: receivedUser } =
+      res.data.data || res.data;
+    handleAuthSuccess(receivedToken, receivedUser);
+    return receivedUser;
   };
 
+  // 6. Login handler
   const login = async (email, password) => {
-    const { data } = await axios.post(`${API_URL}/auth/login`, {
-      email,
-      password,
+    const res = await authAPI.login({ email, password });
+    const { token: receivedToken, user: receivedUser } =
+      res.data.data || res.data;
+    handleAuthSuccess(receivedToken, receivedUser);
+    return receivedUser;
+  };
+
+  // 7. Update profile in state helper (optional convenience for profile edits)
+  const updateUser = (updatedFields) => {
+    setUser((prev) => {
+      const updated = { ...prev, ...updatedFields };
+      localStorage.setItem('user', JSON.stringify(updated));
+      return updated;
     });
-    saveToken(data.token);
-    setUser(data.user);
-    return data.user;
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, token, register, login, logout: clearToken }}
+      value={{
+        user,
+        token,
+        loading,
+        isAuthenticated: !!token && !!user,
+        register,
+        login,
+        logout,
+        updateUser,
+        refreshUser: loadUser,
+      }}
     >
       {children}
     </AuthContext.Provider>
   );
 };
+
+export default AuthContext;

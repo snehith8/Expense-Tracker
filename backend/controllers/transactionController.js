@@ -1,6 +1,9 @@
 const Transaction = require('../models/Transaction');
 const { validationResult } = require('express-validator');
 
+// Helper to escape regex special characters
+const escapeRegex = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const getTransactions = async (req, res) => {
   try {
     const {
@@ -19,17 +22,20 @@ const getTransactions = async (req, res) => {
 
     const query = { user: req.user._id };
 
+    // Safe sanitized search across title, notes, and category
     if (search?.trim()) {
+      const cleanSearch = escapeRegex(search.trim());
       query.$or = [
-        { title: { $regex: search.trim(), $options: 'i' } },
-        { notes: { $regex: search.trim(), $options: 'i' } },
-        { category: { $regex: search.trim(), $options: 'i' } },
+        { title: { $regex: cleanSearch, $options: 'i' } },
+        { notes: { $regex: cleanSearch, $options: 'i' } },
+        { category: { $regex: cleanSearch, $options: 'i' } },
       ];
     }
 
     if (category && category !== 'all') query.category = category;
     if (type && type !== 'all') query.type = type;
 
+    // Date range boundaries
     if (startDate || endDate) {
       query.date = {};
       if (startDate) query.date.$gte = new Date(startDate);
@@ -40,14 +46,15 @@ const getTransactions = async (req, res) => {
       }
     }
 
+    // Amount boundaries
     if (minAmount || maxAmount) {
       query.amount = {};
       if (minAmount) query.amount.$gte = parseFloat(minAmount);
       if (maxAmount) query.amount.$lte = parseFloat(maxAmount);
     }
 
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 15));
     const skip = (pageNum - 1) * limitNum;
     const sortObj = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
 
@@ -56,7 +63,7 @@ const getTransactions = async (req, res) => {
       Transaction.countDocuments(query),
     ]);
 
-    const totalPages = Math.ceil(totalCount / limitNum);
+    const totalPages = Math.ceil(totalCount / limitNum) || 1;
 
     res.json({
       success: true,
@@ -72,9 +79,10 @@ const getTransactions = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res
-      .status(500)
-      .json({ success: false, message: 'Error fetching transactions' });
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching transactions',
+    });
   }
 };
 
@@ -83,25 +91,29 @@ const getTransaction = async (req, res) => {
     const transaction = await Transaction.findOne({
       _id: req.params.id,
       user: req.user._id,
-    });
+    }).lean();
 
-    if (!transaction)
-      return res
-        .status(404)
-        .json({ success: false, message: 'Transaction not found' });
+    if (!transaction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Transaction not found',
+      });
+    }
 
     res.json({ success: true, data: transaction });
   } catch (error) {
-    res
-      .status(500)
-      .json({ success: false, message: 'Error fetching transaction' });
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching transaction',
+    });
   }
 };
 
 const createTransaction = async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty())
+  if (!errors.isEmpty()) {
     return res.status(400).json({ success: false, errors: errors.array() });
+  }
 
   try {
     const { title, amount, category, date, notes, type } = req.body;
@@ -109,56 +121,60 @@ const createTransaction = async (req, res) => {
     const transaction = await Transaction.create({
       user: req.user._id,
       title,
-      amount,
+      amount: parseFloat(amount),
       category,
       date: date || Date.now(),
-      notes,
+      notes: notes || '',
       type: type || 'expense',
     });
 
     res.status(201).json({ success: true, data: transaction });
   } catch (error) {
     console.error(error);
-    res
-      .status(500)
-      .json({ success: false, message: 'Error creating transaction' });
+    res.status(500).json({
+      success: false,
+      message: 'Error creating transaction',
+    });
   }
 };
 
 const updateTransaction = async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty())
+  if (!errors.isEmpty()) {
     return res.status(400).json({ success: false, errors: errors.array() });
+  }
 
   try {
-    const transaction = await Transaction.findOne({
-      _id: req.params.id,
-      user: req.user._id,
+    const updateFields = {};
+    const allowed = ['title', 'amount', 'category', 'date', 'notes', 'type'];
+
+    allowed.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        updateFields[field] =
+          field === 'amount' ? parseFloat(req.body[field]) : req.body[field];
+      }
     });
 
-    if (!transaction)
-      return res
-        .status(404)
-        .json({ success: false, message: 'Transaction not found' });
+    const transaction = await Transaction.findOneAndUpdate(
+      { _id: req.params.id, user: req.user._id },
+      { $set: updateFields },
+      { new: true, runValidators: true },
+    );
 
-    const { title, amount, category, date, notes, type } = req.body;
-
-    transaction.title = title || transaction.title;
-    transaction.amount = amount || transaction.amount;
-    transaction.category = category || transaction.category;
-    transaction.date = date || transaction.date;
-    transaction.notes = notes !== undefined ? notes : transaction.notes;
-    transaction.type = type || transaction.type;
-    transaction.updatedAt = Date.now();
-
-    await transaction.save();
+    if (!transaction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Transaction not found',
+      });
+    }
 
     res.json({ success: true, data: transaction });
   } catch (error) {
     console.error(error);
-    res
-      .status(500)
-      .json({ success: false, message: 'Error updating transaction' });
+    res.status(500).json({
+      success: false,
+      message: 'Error updating transaction',
+    });
   }
 };
 
@@ -169,16 +185,22 @@ const deleteTransaction = async (req, res) => {
       user: req.user._id,
     });
 
-    if (!transaction)
-      return res
-        .status(404)
-        .json({ success: false, message: 'Transaction not found' });
+    if (!transaction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Transaction not found',
+      });
+    }
 
-    res.json({ success: true, message: 'Transaction deleted successfully' });
+    res.json({
+      success: true,
+      message: 'Transaction deleted successfully',
+    });
   } catch (error) {
-    res
-      .status(500)
-      .json({ success: false, message: 'Error deleting transaction' });
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting transaction',
+    });
   }
 };
 

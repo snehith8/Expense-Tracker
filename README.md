@@ -1,204 +1,157 @@
-# 💰 BellCorp Expense Tracker
+Expense Tracker
+A modern, full-stack personal finance application built with the MERN stack (MongoDB, Express, React, Node.js). It provides real-time income and expense tracking, category breakdowns, financial health summaries, interactive monthly analytics, and user account management with cascade deletion.
 
-A full-featured Personal Expense Tracker built with the **MERN Stack** (MongoDB, Express.js, React.js, Node.js).
+Features
 
----
+1. Financial Analytics & Dashboard
+   Live Financial Summaries: Instant calculation of Total Balance, Monthly Income, and Monthly Expenses.
 
-## 🚀 Tech Stack
+Categorical Breakdown: Dynamic categorization (Food, Transport, Utilities, Housing, Entertainment, etc.) with proportional spending distribution.
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React.js 18, React Router v6, Recharts |
-| Backend | Node.js, Express.js |
-| Database | MongoDB (with Mongoose ODM) |
-| Auth | JWT (JSON Web Tokens) + bcryptjs |
+6-Month Trend Visualizer: Continuous monthly trend charts showing income vs. expense patterns over time.
 
----
+Recent Transactions: Real-time stream of latest ledger entries with pagination, date filters, and multi-field text search.
 
-## 📁 Project Structure
+2. Authentication & Profile Management
+   JWT-Based Authentication: Protected endpoints with token-based access and bcrypt password hashing.
 
-```
-bellcorp-expense-tracker/
+In-Modal Password Reset: Built-in email verification and direct password update workflow without external mail dependencies.
+
+Inline Account Management: Slide-out modal to edit full name, update passwords on demand, or permanently delete the account.
+
+Cascade Deletion: Automatically purges all associated transactions from MongoDB when a user account is deleted, preventing orphaned records.
+
+3. Production & Security Optimizations
+   Database Indexing: Compound indexes on (user, date), (user, type, category), and full-text indexes for search.
+
+Aggregation Pipelines: Multi-faceted MongoDB aggregation queries to process summaries on the database engine.
+
+Security Hardening: Rate limiting on auth endpoints with express-rate-limit, secure HTTP headers with helmet, and payload size restrictions.
+
+Tech Stack
+Layer Technologies
+Frontend React (SPA), React Router, Context API, CSS3 Modules / Custom Dark Theme
+Backend Node.js, Express.js, Express Validator
+Database MongoDB, Mongoose ODM
+Security JSON Web Tokens (JWT), Bcrypt.js, Helmet, Express Rate Limit
+Project Structure
+Plaintext
+expense-tracker/
 ├── backend/
-│   ├── config/
-│   │   └── db.js              # MongoDB connection
-│   ├── controllers/
-│   │   ├── authController.js  # Register, Login, GetMe
-│   │   ├── transactionController.js  # Full CRUD + search/filter
-│   │   └── dashboardController.js   # Aggregated stats
-│   ├── middleware/
-│   │   └── auth.js            # JWT protect middleware
-│   ├── models/
-│   │   ├── User.js            # User schema with bcrypt
-│   │   └── Transaction.js     # Transaction schema + indexes
-│   ├── routes/
-│   │   ├── auth.js
-│   │   ├── transactions.js
-│   │   └── dashboard.js
-│   ├── .env.example
-│   ├── server.js
-│   └── package.json
+│ ├── config/
+│ │ └── db.js # Database connection setup
+│ ├── controllers/
+│ │ ├── authController.js # Auth, password reset & profile handlers
+│ │ ├── dashboardController.js# Aggregation & chart data
+│ │ └── transactionController.js # Transaction CRUD & filters
+│ ├── middleware/
+│ │ └── auth.js # JWT verification & lean user hydration
+│ ├── models/
+│ │ ├── Transaction.js # Transaction schema & compound indexes
+│ │ └── User.js # User schema, bcrypt hooks & cascade pre-hook
+│ ├── routes/
+│ │ ├── auth.js # Authentication & profile routes
+│ │ ├── dashboard.js # Analytics routes
+│ │ └── transactions.js # Transaction endpoints
+│ ├── server.js # App configuration & middleware chain
+│ └── package.json
 │
 └── frontend/
-    ├── public/
-    │   └── index.html
-    ├── src/
-    │   ├── components/
-    │   │   ├── layout/
-    │   │   │   ├── Layout.js        # App shell
-    │   │   │   └── Sidebar.js       # Collapsible sidebar nav
-    │   │   └── transactions/
-    │   │       └── TransactionModal.js  # Add/Edit modal
-    │   ├── context/
-    │   │   └── AuthContext.js       # Auth state + token management
-    │   ├── pages/
-    │   │   ├── LoginPage.js
-    │   │   ├── RegisterPage.js
-    │   │   ├── DashboardPage.js     # Charts + summary
-    │   │   └── TransactionsPage.js  # Full explorer
-    │   ├── utils/
-    │   │   └── api.js               # Axios helpers + constants
-    │   ├── App.js                   # Routes + Protected routes
-    │   ├── index.css                # Global design system
-    │   └── index.js
-    └── package.json
-```
+├── src/
+│ ├── context/
+│ │ └── AuthContext.jsx # Global session state provider
+│ ├── pages/
+│ │ ├── DashboardPage.jsx # Analytics and summary view
+│ │ ├── LoginPage.jsx # Login form & verification modal
+│ │ ├── RegisterPage.jsx # New user sign-up
+│ │ ├── ResetPasswordPage.jsx
+│ │ └── TransactionsPage.jsx # Full transaction ledger & filters
+│ ├── utils/
+│ │ └── api.js # Axios client & centralized endpoint map
+│ ├── App.jsx # Navigation layout, sidebar & routes
+│ └── App.css # Shared styling & dark UI theme
+└── package.json
+Getting Started
+Prerequisites
+Node.js (v16 or higher)
 
----
+MongoDB running locally on port 00000 or a MongoDB Atlas URI.
 
-## ⚙️ Setup & Running
+Backend Setup
+Navigate to the backend directory:
 
-### Prerequisites
-- Node.js v16+
-- MongoDB (local or MongoDB Atlas)
-
-### 1. Clone & Install
-
-```bash
-# Install backend dependencies
+Bash
 cd backend
+Install dependencies:
+
+Bash
 npm install
+Configure environment variables by creating a .env file in the backend/ root:
 
-# Install frontend dependencies
-cd ../frontend
-npm install
-```
-
-### 2. Configure Environment
-
-```bash
-cd backend
-cp .env.example .env
-```
-
-Edit `.env`:
-```env
-PORT=5000
-MONGO_URI=mongodb://localhost:27017/bellcorp_expense_tracker
-JWT_SECRET=your_super_secret_key_here
+Code snippet
+PORT=8000
+MONGO_URI=mongodb://localhost:portnumber/claustername
+JWT_SECRET=your_super_secret_jwt_key
 JWT_EXPIRE=7d
-NODE_ENV=development
-```
+FRONTEND_URL=http://localhost:3000
+Start the server:
 
-### 3. Start the App
+Bash
 
-**Terminal 1 – Backend:**
-```bash
-cd backend
-npm run dev    # uses nodemon for hot-reload
-# or: npm start
-```
+# Development mode with nodemon
 
-**Terminal 2 – Frontend:**
-```bash
+npm run dev
+
+# Or standard node runner
+
+node server.js
+The backend will be live at http://localhost:8000.
+
+Frontend Setup
+Open a new terminal and navigate to the frontend directory:
+
+Bash
 cd frontend
+Install dependencies:
+
+Bash
+npm install
+Start the React development server:
+
+Bash
 npm start
-```
+The frontend will run at http://localhost:3000.
 
-App runs at: **https://expensetrackerbysnehith.netlify.app/**  
+API Reference
 
----
+Authentication & Account (/api/auth)
 
-## 🔑 Features Implemented
+Method Endpoint Access Description
 
-### Authentication
-- ✅ User Registration (name, email, password with bcrypt hashing)
-- ✅ User Login (JWT token issued)
-- ✅ Protected routes (frontend + backend middleware)
-- ✅ Persistent login via localStorage token
-- ✅ Auto-logout on invalid/expired token
+POST /api/auth/register Public Register a new user account
+POST /api/auth/login Public Authenticate user & return JWT
+POST /api/auth/verify-email Public Verify if an email address exists
+POST /api/auth/direct-reset-password Public Reset password for verified account
+GET /api/auth/me Protected Fetch current user session details
+PUT /api/auth/update-profile Protected Update name or change account password
+DELETE /api/auth/delete-account Protected Delete user account & cascade wipe all records
 
-### Transaction Management
-- ✅ Add transaction (title, amount, category, date, notes, type)
-- ✅ Edit transaction (pre-filled form, inline validation)
-- ✅ Delete transaction (confirmation modal)
-- ✅ View transaction details (click any row)
-- ✅ Expense / Income type toggle
+Transactions (/api/transactions)
 
-### Transaction Explorer (Scalable)
-- ✅ **Server-side pagination** (15 per page, dynamic nav)
-- ✅ **Debounced text search** (400ms, title/notes/category)
-- ✅ **Filter by category** (13 categories)
-- ✅ **Filter by type** (expense/income)
-- ✅ **Date range filter** (from/to)
-- ✅ **Sort options** (date asc/desc, amount asc/desc)
-- ✅ **Active filter chips** with individual remove
-- ✅ **Empty state handling** for no results
-- ✅ **Skeleton loaders** during data fetch
-- ✅ **UI state preservation** during navigation
+Method Endpoint Access Description
 
-### Dashboard
-- ✅ Total balance, income, expenses stats
-- ✅ Current month summary
-- ✅ Category breakdown (pie chart with percentages)
-- ✅ 6-month income vs expenses trend (area chart)
-- ✅ Recent 5 transactions preview
+GET /api/transactions Protected Get paginated, filtered, & searched transactions
+GET /api/transactions/:id Protected Fetch a single transaction entry
+POST /api/transactions Protected Create a new income or expense transaction
+PUT /api/transactions/:id Protected Update an existing transaction
+DELETE /api/transactions/:id Protected Delete a single transaction entry
 
----
+Dashboard Analytics (/api/dashboard)
 
-## 📡 API Endpoints
+Method Endpoint Access Description
 
-### Auth
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/register` | Register new user |
-| POST | `/api/auth/login` | Login user, returns JWT |
-| GET | `/api/auth/me` | Get current user (protected) |
+GET /api/dashboard Protected Aggregate totals, month balance, categories, & trends
 
-### Transactions
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/transactions` | List with pagination/search/filters |
-| POST | `/api/transactions` | Create transaction |
-| GET | `/api/transactions/:id` | Get single transaction |
-| PUT | `/api/transactions/:id` | Update transaction |
-| DELETE | `/api/transactions/:id` | Delete transaction |
+Author : Snehith Amirishetty
 
-**Query params for GET /api/transactions:**
-- `page`, `limit` — pagination
-- `search` — text search (title, notes, category)
-- `category` — filter by category
-- `type` — expense | income
-- `startDate`, `endDate` — date range (ISO)
-- `minAmount`, `maxAmount` — amount range
-- `sortBy` — field name (date, amount)
-- `sortOrder` — asc | desc
-
-### Dashboard
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/dashboard` | Summary, categories, recent, trend |
-
----
-
-## 🏷️ Transaction Categories
-Food & Dining, Transportation, Shopping, Entertainment, Healthcare, Utilities, Housing, Education, Travel, Personal Care, Investment, Income, Other
-
----
-
-## 🛡️ Security Features
-- Passwords hashed with bcrypt (salt rounds: 10)
-- JWT tokens with configurable expiry
-- All transaction routes scoped to authenticated user
-- Input validation with express-validator
-- CORS configured for frontend origin
+Live Link:
