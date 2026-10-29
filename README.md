@@ -1,41 +1,34 @@
-Expense Tracker
+# Expense Tracker
 A modern, full-stack personal finance application built with the MERN stack (MongoDB, Express, React, Node.js). It provides real-time income and expense tracking, category breakdowns, financial health summaries, interactive monthly analytics, and user account management with cascade deletion.
 
-Features
+# Features
 
 1. Financial Analytics & Dashboard
-   Live Financial Summaries: Instant calculation of Total Balance, Monthly Income, and Monthly Expenses.
-
-Categorical Breakdown: Dynamic categorization (Food, Transport, Utilities, Housing, Entertainment, etc.) with proportional spending distribution.
-
-6-Month Trend Visualizer: Continuous monthly trend charts showing income vs. expense patterns over time.
-
-Recent Transactions: Real-time stream of latest ledger entries with pagination, date filters, and multi-field text search.
+   Live Financial Summaries : Instant calculation of Total Balance, Monthly Income, and Monthly Expenses.
+   Categorical Breakdown : Dynamic categorization (Food, Transport, Utilities, Housing, Entertainment, etc.) with proportional spending distribution.
+   6-Month Trend Visualizer : Continuous monthly trend charts showing income vs. expense patterns over time.
+   Recent Transactions : Real-time stream of latest ledger entries with pagination, date filters, and multi-field text search.
 
 2. Authentication & Profile Management
-   JWT-Based Authentication: Protected endpoints with token-based access and bcrypt password hashing.
-
-In-Modal Password Reset: Built-in email verification and direct password update workflow without external mail dependencies.
-
-Inline Account Management: Slide-out modal to edit full name, update passwords on demand, or permanently delete the account.
-
-Cascade Deletion: Automatically purges all associated transactions from MongoDB when a user account is deleted, preventing orphaned records.
+   JWT-Based Authentication : Protected endpoints with token-based access and bcrypt password hashing.
+   In-Modal Password Reset : Built-in email verification and direct password update workflow without external mail dependencies.
+   Inline Account Management : Slide-out modal to edit full name, update passwords on demand, or permanently delete the account.
+   Cascade Deletion : Automatically purges all associated transactions from MongoDB when a user account is deleted, preventing orphaned records.
 
 3. Production & Security Optimizations
-   Database Indexing: Compound indexes on (user, date), (user, type, category), and full-text indexes for search.
+   Database Indexing : Compound indexes on (user, date), (user, type, category), and full-text indexes for search.
+   Aggregation Pipelines : Multi-faceted MongoDB aggregation queries to process summaries on the database engine.
+   Security Hardening : Rate limiting on auth endpoints with express-rate-limit, secure HTTP headers with helmet, and payload size restrictions.
 
-Aggregation Pipelines: Multi-faceted MongoDB aggregation queries to process summaries on the database engine.
+# Tech Stack
 
-Security Hardening: Rate limiting on auth endpoints with express-rate-limit, secure HTTP headers with helmet, and payload size restrictions.
+1. Frontend : React (SPA), React Router, Context API, CSS3 Modules / Custom Dark Theme
+2. Backend : Node.js, Express.js, Express Validator
+3. Database : MongoDB, Mongoose ODM
+4. Security : JSON Web Tokens (JWT), Bcrypt.js, Helmet, Express Rate Limit
+   
+# Project Structure
 
-Tech Stack
-Layer Technologies
-Frontend React (SPA), React Router, Context API, CSS3 Modules / Custom Dark Theme
-Backend Node.js, Express.js, Express Validator
-Database MongoDB, Mongoose ODM
-Security JSON Web Tokens (JWT), Bcrypt.js, Helmet, Express Rate Limit
-Project Structure
-Plaintext
 expense-tracker/
 ├── backend/
 │ ├── config/
@@ -71,20 +64,21 @@ expense-tracker/
 │ ├── App.jsx # Navigation layout, sidebar & routes
 │ └── App.css # Shared styling & dark UI theme
 └── package.json
+
+
 Getting Started
-Prerequisites
-Node.js (v16 or higher)
+- Prerequisites
+- 1. Node.js (v16 or higher)
+  2. MongoDB running locally on port 00000 or a MongoDB Atlas URI. (Port changes)
 
-MongoDB running locally on port 00000 or a MongoDB Atlas URI.
-
-Backend Setup
+# Backend Setup
 Navigate to the backend directory:
 
-Bash
+1. Bash
 cd backend
 Install dependencies:
 
-Bash
+2. Bash
 npm install
 Configure environment variables by creating a .env file in the backend/ root:
 
@@ -96,33 +90,30 @@ JWT_EXPIRE=7d
 FRONTEND_URL=http://localhost:3000
 Start the server:
 
-Bash
-
-# Development mode with nodemon
-
+3. Bash
 npm run dev
 
-# Or standard node runner
+Or standard node runner
 
 node server.js
 The backend will be live at http://localhost:8000.
 
-Frontend Setup
+# Frontend Setup
 Open a new terminal and navigate to the frontend directory:
 
-Bash
+1. Bash
 cd frontend
 Install dependencies:
 
-Bash
+2. Bash
 npm install
 Start the React development server:
 
-Bash
+3. Bash
 npm start
 The frontend will run at http://localhost:3000.
 
-API Reference
+# API Reference
 
 Authentication & Account (/api/auth)
 
@@ -152,6 +143,5 @@ Method Endpoint Access Description
 
 GET /api/dashboard Protected Aggregate totals, month balance, categories, & trends
 
-Author : Snehith Amirishetty
-
-Live Link:
+# Author : Snehith Amirishetty
+# Live Link:
